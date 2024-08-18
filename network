@@ -5,10 +5,7 @@ import torch.nn.functional as F
 from DGFEG.GCN import EGP
 from dgf import DGF
 
-from GCN import make_laplace_pyramid
-
 from network.newbackbone import mctrans
-from torchvision.transforms.functional import rgb_to_grayscale
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1):
@@ -103,16 +100,7 @@ class DGFEG(nn.Module):
         fusion = self.DGF(f21_, f21)
         fusion_map = self.decoder_final(fusion)
 
-        grayscale_img1 = rgb_to_grayscale(A)
-        grayscale_img2 = rgb_to_grayscale(B)
-        edge_feature1 = make_laplace_pyramid(grayscale_img1, 5, 1)
-        edge_feature2 = make_laplace_pyramid(grayscale_img2, 5, 1)
-        edge_feature1 = edge_feature1[1]
-        edge_feature2 = edge_feature2[1]
-        edge = torch.cat((edge_feature1,edge_feature2),1)
-        edge = self.conv2d(edge)
-        edge = F.interpolate(edge, size=(64, 64), mode='bilinear', align_corners=True)
-        finalgcn = self.egp(fusion_map,edge)
+        finalgcn = self.egp(fusion_map,A,B)
         finalgcn = self.convfinal(finalgcn)
 
         finalgcn = F.interpolate(finalgcn, size, mode='bilinear', align_corners=True)
